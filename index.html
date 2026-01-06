@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MoCode | Cyber Defense</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff9d;
+            --secondary: #ff0055;
+            --training: #00d2ff;
+            --bg-dark: #080810;
+            --panel-bg: rgba(15, 20, 35, 0.95);
+            --text-main: #e0e6ed;
+            --font-main: 'Tajawal', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            /* تم تفعيل التمرير العمودي */
+            overflow-y: auto;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000 100%);
+            background-attachment: fixed; /* تثبيت الخلفية عند التمرير */
+        }
+
+        /* تنسيق شريط المطور ليناسب الموبايل */
+        #developer-signature {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 9999;
+            font-size: 0.8rem; /* تصغير الخط قليلاً للموبايل */
+            color: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            /* إضافة خلفية للشريط عشان الكلام ميدخلش في اللعبة لما تنزل */
+            background: rgba(8, 8, 16, 0.9);
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .dev-name {
+            color: var(--primary);
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%;
+        }
+
+        #sound-toggle-btn {
+            pointer-events: auto;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: var(--primary);
+            padding: 0;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px; /* تصغير الزر قليلاً */
+            height: 35px;
+            font-size: 1rem;
+            z-index: 10000;
+            flex-shrink: 0;
+        }
+
+        #sound-toggle-btn:hover {
+            background: rgba(0, 255, 157, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+        }
+
+        .screen {
+            position: relative; /* تغيير من absolute لـ relative للسماح بالتمرير */
+            min-height: 100vh;
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            /* تغيير المحاذاة لتبدأ من الأعلى بدلاً من المنتصف */
+            justify-content: flex-start; 
+            padding: 80px 20px 40px 20px; /* مسافة من فوق عشان شريط الاسم */
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 1;
+        }
+
+        /* توسيط شاشة البداية فقط */
+        #start-screen {
+            justify-content: center;
+            min-height: 100vh;
+            padding-top: 60px;
+        }
+
+        .screen.active {
+            display: flex;
+            opacity: 1;
+            z-index: 10;
+        }
+
+        .glitch-text {
+            font-size: 2.8rem; /* تصغير الخط الأساسي */
+            font-weight: 900;
+            color: var(--primary);
+            text-shadow: 2px 2px var(--secondary);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-bottom: 15px;
+            opacity: 0.8;
+            text-align: center;
+        }
+
+        .prayer-text {
+            color: #ffd700;
+            font-size: 1rem;
+            margin-bottom: 25px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            animation: glow 3s infinite alternate;
+            font-weight: bold;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 5px rgba(255, 215, 0, 0.2); border-color: rgba(255,215,0,0.2); }
+            to { text-shadow: 0 0 15px rgba(255, 215, 0, 0.6); border-color: rgba(255,215,0,0.5); }
+        }
+
+        .mission-brief {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border-right: 4px solid var(--secondary);
+            width: 100%;
+            max-width: 500px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            text-align: right;
+            backdrop-filter: blur(5px);
+            font-size: 0.95rem;
+        }
+
+        .mode-select {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
+            padding-bottom: 20px; /* مسافة إضافية في الأسفل */
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: var(--font-main);
+            text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.1);
+            flex: 1 1 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            min-width: 140px; /* ضمان عرض مناسب */
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--primary);
+            background: rgba(0, 255, 157, 0.1);
+        }
+
+        .action-btn:active {
+            transform: scale(0.98);
+        }
+
+        .survival-btn {
+            border-color: var(--secondary);
+            color: var(--secondary);
+            box-shadow: 0 0 10px rgba(255, 0, 85, 0.1);
+        }
+
+        .survival-btn:hover {
+            box-shadow: 0 0 15px var(--secondary);
+            background: rgba(255, 0, 85, 0.1);
+        }
+
+        .training-btn {
+            border-color: var(--training);
+            color: var(--training);
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
+        }
+
+        .training-btn:hover {
+            box-shadow: 0 0 15px var(--training);
+            background: rgba(0, 210, 255, 0.1);
+        }
+
+        .game-header {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            flex-wrap: wrap; /* السماح للعناصر بالنزول لسطر جديد لو الشاشة صغيرة */
+            gap: 10px;
+        }
+
+        .hud-item {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .timer-box {
+            color: #ffd700;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            min-width: 50px;
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .status-icon {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .game-content {
+            width: 100%;
+            max-width: 800px;
+            flex-grow: 1; /* يسمح للمحتوى بأخذ المساحة المتبقية */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-bottom: 20px;
+        }
+
+        .story-log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #aaddff;
+            border-left: 3px solid var(--primary);
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            line-height: 1.4;
+        }
+
+        .log-time {
+            color: var(--primary);
+            font-weight: bold;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .question-container {
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        #question-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .code-view {
+            background: #111;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            direction: ltr;
+            text-align: left;
+            font-family: 'Consolas', monospace;
+            color: #e6db74;
+            overflow-x: auto; /* يسمح بالتمرير الأفقي للكود */
+            display: none;
+            font-size: 0.9rem;
+            white-space: pre;
+            -webkit-overflow-scrolling: touch; /* تمرير سلس على الموبايل */
+        }
+
+        .choices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .choice-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            text-align: center;
+            font-weight: bold;
+            font-family: var(--font-main);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60px; /* ضمان ارتفاع كافي للمس */
+        }
+
+        .choice-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+
+        .choice-btn:active {
+            transform: scale(0.98);
+        }
+
+        .choice-btn.correct {
+            background: rgba(0, 255, 157, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 255, 157, 0.2);
+        }
+
+        .choice-btn.wrong {
+            background: rgba(255, 0, 85, 0.2);
+            border-color: var(--secondary);
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .game-footer {
+            width: 100%;
+            max-width: 800px;
+            margin-top: auto;
+            position: sticky; /* محاولة تثبيت الفوتر لو أمكن */
+            bottom: 10px;
+        }
+
+        .xp-bar-wrapper {
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        #xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #00c3ff);
+            transition: width 0.5s ease;
+        }
+
+        .footer-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 15, 0.9);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .score-display {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 0.95rem;
+        }
+
+        .nav-btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #aaa;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-main);
+            transition: 0.3s;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn:hover {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .result-card {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid var(--primary);
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            margin: auto; /* لتوسيطها عند التمرير */
+        }
+
+        /* تحسينات الموبايل الخاصة */
+        @media (max-width: 768px) {
+            .choices-grid { 
+                grid-template-columns: 1fr; /* الاختيارات تحت بعض في الموبايل */
+            }
+            .glitch-text { 
+                font-size: 2rem; 
+            }
+            .subtitle {
+                font-size: 1rem;
+            }
+            .mission-brief {
+                font-size: 0.85rem;
+                padding: 15px;
+            }
+            #question-text { 
+                font-size: 1rem; 
+            }
+            .choice-btn { 
+                padding: 12px; 
+                font-size: 0.9rem;
+            }
+            .mode-select { 
+                flex-direction: column; 
+            }
+            .action-btn { 
+                width: 100%; 
+            }
+            .dev-name {
+                font-size: 0.8rem;
+            }
+            .game-header {
+                justify-content: center;
+            }
+            .hud-item {
+                font-size: 0.8rem;
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes scan {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--secondary), var(--primary), var(--secondary));
+            animation: scan 2s linear infinite;
+        }
+
+        .end-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .secondary-btn {
+            border-color: #fff;
+            color: #fff;
+        }
+        
+        .secondary-btn:hover {
+            background: #fff;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="developer-signature">
+        <span>Dev: <span class="dev-name">Mohamed Diaa AbdALSalam</span></span>
+        <button id="sound-toggle-btn" onclick="toggleSound()">🔊</button>
+    </div>
+
+    <section id="start-screen" class="screen active">
+        <div class="glitch-wrapper">
+            <h1 class="glitch-text" data-text="CYBER CORE">MOHAMED CYBER DEFENSE</h1>
+        </div>
+        <div class="prayer-text">✨ اللهم صل وسلم وبارك على نبينا محمد ✨</div>
+        <h2 class="subtitle">نظام الدفاع البرمجي</h2>
+        <div class="mission-brief">
+            <p>تحذير: تم اكتشاف اختراقات متعددة في النظام😶‍🌫️.</p>
+            <p>المهمة: أجب على الأسئلة البرمجية لإصلاح الثغرات⚠️.</p>
+            <p>هدفي من اللعبة: تطوير مهاراتك بشكل مسلي👌.</p>
+        </div>
+        <div class="mode-select">
+            <button onmouseenter="playSound('hover')" onclick="initGame('campaign')" class="action-btn">🛡️ وضع المهمة</button>
+            <button onmouseenter="playSound('hover')" onclick="initGame('survival')" class="action-btn survival-btn">💀 وضع البقاء</button>
+            <button onmouseenter="playSound('hover')" onclick="initGame('training')" class="action-btn training-btn">🎓 وضع التدريب</button>
+        </div>
+    </section>
+
+    <section id="game-screen" class="screen">
+        <header class="game-header">
+            <div class="hud-item">
+                <span class="status-icon"></span> الدرع: <span id="shield-integrity">100%</span>
+            </div>
+            <div class="hud-item timer-box">
+                <span id="timer-icon">⏱️</span> <span id="timer-display">20</span>s
+            </div>
+            <div class="hud-item">
+                الهدف: <span id="current-stage">1</span>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="story-log" id="story-log">
+                <span class="log-time">>_ SYSTEM:</span> <span id="story-text">جاري تهيئة ساحة المعركة...</span>
+            </div>
+
+            <div class="question-container">
+                <h3 id="question-text">نص السؤال</h3>
+            </div>
+
+            <div id="code-panel" class="code-view">
+                <pre><code id="code-display"></code></pre>
+            </div>
+
+            <div id="choices-panel" class="choices-grid">
+            </div>
+        </main>
+
+        <footer class="game-footer">
+            <div class="xp-bar-wrapper">
+                <div id="xp-fill" style="width: 0%"></div>
+            </div>
+            <div class="footer-controls">
+                <div class="score-display">النقاط: <span id="score-number">0</span></div>
+                <button id="home-btn-game" class="nav-btn" onmouseenter="playSound('hover')" onclick="goHome()">🏠 خروج</button>
+            </div>
+        </footer>
+    </section>
+
+    <section id="end-screen" class="screen" style="justify-content: center;">
+        <div class="result-card">
+            <h1 id="end-title">تقرير المهمة</h1>
+            <p id="end-message">الوصف</p>
+            <div class="final-stats">
+                <div style="font-size: 1.5rem; margin: 15px 0; color: var(--primary);">النتيجة: <span id="final-score">0</span></div>
+            </div>
+            <div class="end-actions">
+                <button id="restart-btn" onmouseenter="playSound('hover')" class="action-btn" onclick="restartGame()">إعادة المحاولة</button>
+                <button id="home-btn-end" onmouseenter="playSound('hover')" class="action-btn secondary-btn" onclick="goHome()">القائمة الرئيسية</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let isMuted = false;
+
+        function toggleSound() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('sound-toggle-btn');
+            btn.innerHTML = isMuted ? '🔇' : '🔊';
+            btn.style.borderColor = isMuted ? 'var(--secondary)' : 'rgba(255,255,255,0.2)';
+            if (!isMuted && audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'hover') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, now);
+                oscillator.frequency.exponentialRampToValueAtTime(1200, now + 0.05);
+                gainNode.gain.setValueAtTime(0.05, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                oscillator.start(now);
+                oscillator.stop(now + 0.05);
+            } 
+            else if (type === 'click') {
+                oscillator.type = 'square';
+                oscillator.frequency.setValueAtTime(600, now);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                oscillator.start(now);
+                oscillator.stop(now + 0.1);
+            }
+            else if (type === 'correct') {
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(440, now);
+                oscillator.frequency.setValueAtTime(554, now + 0.1); 
+                oscillator.frequency.setValueAtTime(659, now + 0.2); 
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+                oscillator.start(now);
+                oscillator.stop(now + 0.4);
+            }
+            else if (type === 'wrong') {
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(150, now);
+                oscillator.frequency.linearRampToValueAtTime(100, now + 0.3);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+                oscillator.start(now);
+                oscillator.stop(now + 0.3);
+            }
+            else if (type === 'start') {
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(200, now);
+                oscillator.frequency.linearRampToValueAtTime(800, now + 0.5);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+                oscillator.start(now);
+                oscillator.stop(now + 0.5);
+            }
+        }
+
+        const storyBeats = [
+            "جاري اختراق الجدار الناري... القوات تتأهب.",
+            "تم رصد فيروس في ملفات النظام، ابدأ المعالجة.",
+            "وحدة المعالجة المركزية تحت الضغط، نحتاج لكود نظيف.",
+            "الهاكرز يحاولون سرقة البيانات، أغلق المنافذ!",
+            "تم استعادة 40% من السيرفرات، واصل التقدم.",
+            "هجوم DDOS عنيف! استخدم الدوال للحماية.",
+            "الأنظمة تعود للعمل تدريجياً...",
+            "تم عزل البرمجيات الخبيثة بنجاح.",
+            "المعركة الأخيرة! الكود النهائي هو الفاصل."
+        ];
+
+        const questionsBank = [
+            { q: "ما الكلمة المفتاحية لتعريف ثابت؟", a: [{t:"const",c:true}, {t:"let",c:false}, {t:"var",c:false}, {t:"static",c:false}] },
+            { q: "أي نوع بيانات ليس بدائياً (Primitive)؟", a: [{t:"Object",c:true}, {t:"String",c:false}, {t:"Number",c:false}, {t:"Boolean",c:false}] },
+            { q: "ما ناتج 5 + '5' في جافا سكريبت؟", a: [{t:"'55'",c:true}, {t:"10",c:false}, {t:"Error",c:false}, {t:"NaN",c:false}] },
+            { q: "كيف نكتب تعليقاً في JS؟", a: [{t:"// comment",c:true}, {t:"<--comment-->",c:false}, {t:"# comment",c:false}, {t:"/* comment",c:false}] },
+            { q: "ما وظيفة Array.push()؟", a: [{t:"إضافة للنهاية",c:true}, {t:"حذف من النهاية",c:false}, {t:"إضافة للبداية",c:false}, {t:"حذف من البداية",c:false}] },
+            { q: "كيف نعلن عن دالة سهمية؟", c: "const myFunc = ___", a: [{t:"() => {}",c:true}, {t:"function() {}",c:false}, {t:"=> () {}",c:false}, {t:"func => {}",c:false}] },
+            { q: "ماذا يرجع typeof []؟", a: [{t:"'object'",c:true}, {t:"'array'",c:false}, {t:"'list'",c:false}, {t:"'null'",c:false}] },
+            { q: "كيف نربط ملف JS خارجي؟", a: [{t:"<script src='...'>",c:true}, {t:"<link href='...'>",c:false}, {t:"<js file='...'>",c:false}, {t:"<include src='...'>",c:false}] },
+            { q: "أي مما يلي يعتبر Loop؟", a: [{t:"for",c:true}, {t:"if",c:false}, {t:"switch",c:false}, {t:"const",c:false}] },
+            { q: "ما هو DOM؟", a: [{t:"Document Object Model",c:true}, {t:"Data Object Mode",c:false}, {t:"Digital Ordinance Model",c:false}, {t:"Disk Operating Method",c:false}] },
+            { q: "كيف نختار عنصر بـ ID؟", a: [{t:"getElementById",c:true}, {t:"querySelectorAll",c:false}, {t:"getElementsByClass",c:false}, {t:"getId",c:false}] },
+            { q: "ما وظيفة console.log؟", a: [{t:"الطباعة في الكونسول",c:true}, {t:"إظهار تنبيه",c:false}, {t:"طباعة في الصفحة",c:false}, {t:"تسجيل الدخول",c:false}] },
+            { q: "ما ناتج 10 % 3؟", a: [{t:"1",c:true}, {t:"3",c:false}, {t:"0",c:false}, {t:"10",c:false}] },
+            { q: "كيف نحول نص '100' لرقم؟", a: [{t:"parseInt('100')",c:true}, {t:"toString('100')",c:false}, {t:"parseNumber('100')",c:false}, {t:"toInt('100')",c:false}] },
+            { q: "الرمز || يعني؟", a: [{t:"OR (أو)",c:true}, {t:"AND (و)",c:false}, {t:"NOT (لا)",c:false}, {t:"XOR",c:false}] },
+            { q: "الرمز && يعني؟", a: [{t:"AND (و)",c:true}, {t:"OR (أو)",c:false}, {t:"EQUAL",c:false}, {t:"PLUS",c:false}] },
+            { q: "ما الفرق بين == و ===؟", a: [{t:"=== تقارن النوع والقيمة",c:true}, {t:"لا يوجد فرق",c:false}, {t:"== أدق",c:false}, {t:"== تقارن النوع فقط",c:false}] },
+            { q: "كيف نوقف حلقة تكرار؟", a: [{t:"break",c:true}, {t:"stop",c:false}, {t:"exit",c:false}, {t:"return",c:false}] },
+            { q: "ماذا يفعل continue؟", a: [{t:"يتخطى للدورة التالية",c:true}, {t:"يوقف الحلقة",c:false}, {t:"يعيد الدالة",c:false}, {t:"يخرج من البرنامج",c:false}] },
+            { q: "كيف ننشئ كائن (Object)؟", a: [{t:"{ key: value }",c:true}, {t:"[ key: value ]",c:false}, {t:"( key: value )",c:false}, {t:"< key: value >",c:false}] },
+            { q: "كيف نصل لخاصية name في obj؟", a: [{t:"obj.name",c:true}, {t:"obj(name)",c:false}, {t:"obj->name",c:false}, {t:"obj:name",c:false}] },
+            { q: "ما هو index أول عنصر في المصفوفة؟", a: [{t:"0",c:true}, {t:"1",c:false}, {t:"-1",c:false}, {t:"null",c:false}] },
+            { q: "كيف نعرف طول المصفوفة؟", a: [{t:"arr.length",c:true}, {t:"arr.size",c:false}, {t:"arr.count",c:false}, {t:"arr.long",c:false}] },
+            { q: "ما وظيفة Array.pop()؟", a: [{t:"حذف آخر عنصر",c:true}, {t:"حذف أول عنصر",c:false}, {t:"إضافة عنصر",c:false}, {t:"نسخ المصفوفة",c:false}] },
+            { q: "ما هي قيمة المتغير الذي لم يعين له قيمة؟", a: [{t:"undefined",c:true}, {t:"null",c:false}, {t:"0",c:false}, {t:"error",c:false}] },
+            { q: "كيف نضيف صنف (class) لعنصر؟", a: [{t:"el.classList.add()",c:true}, {t:"el.addClass()",c:false}, {t:"el.class = ''",c:false}, {t:"el.className()",c:false}] },
+            { q: "ما الحدث عند النقر على عنصر؟", a: [{t:"click",c:true}, {t:"mouse",c:false}, {t:"hover",c:false}, {t:"press",c:false}] },
+            { q: "دالة تنفذ كود بعد وقت محدد؟", a: [{t:"setTimeout",c:true}, {t:"setInterval",c:false}, {t:"setTime",c:false}, {t:"doLater",c:false}] },
+            { q: "دالة تكرر كود كل فترة زمنية؟", a: [{t:"setInterval",c:true}, {t:"setTimeout",c:false}, {t:"loopTime",c:false}, {t:"repeat",c:false}] },
+            { q: "كيف نغير نص عنصر HTML؟", a: [{t:"innerText",c:true}, {t:"changeText",c:false}, {t:"textValue",c:false}, {t:"write",c:false}] },
+            { q: "ما هو JSON؟", a: [{t:"صيغة لتبادل البيانات",c:true}, {t:"لغة برمجة",c:false}, {t:"مكتبة جافا",c:false}, {t:"محرر نصوص",c:false}] },
+            { q: "تحويل كائن JSON لنص؟", a: [{t:"JSON.stringify()",c:true}, {t:"JSON.parse()",c:false}, {t:"JSON.toString()",c:false}, {t:"JSON.toText()",c:false}] },
+            { q: "تحويل نص JSON لكائن؟", a: [{t:"JSON.parse()",c:true}, {t:"JSON.stringify()",c:false}, {t:"JSON.object()",c:false}, {t:"JSON.convert()",c:false}] },
+            { q: "ما هو 'this' في JS؟", a: [{t:"يشير للكائن الحالي",c:true}, {t:"يشير للملف السابق",c:false}, {t:"اسم متغير",c:false}, {t:"دالة عامة",c:false}] },
+            { q: "كيف نمنع الحدث الافتراضي للنموذج؟", a: [{t:"e.preventDefault()",c:true}, {t:"e.stop()",c:false}, {t:"e.noDefault()",c:false}, {t:"e.cancel()",c:false}] },
+            { q: "CSS: تغيير لون الخلفية؟", a: [{t:"background-color",c:true}, {t:"color-background",c:false}, {t:"bg-color",c:false}, {t:"wall-color",c:false}] },
+            { q: "CSS: تغيير حجم الخط؟", a: [{t:"font-size",c:true}, {t:"text-size",c:false}, {t:"font-height",c:false}, {t:"size",c:false}] },
+            { q: "CSS: جعل النص عريض؟", a: [{t:"font-weight: bold",c:true}, {t:"font-style: bold",c:false}, {t:"text: bold",c:false}, {t:"bold: true",c:false}] },
+            { q: "CSS: تحديد الهوامش الخارجية؟", a: [{t:"margin",c:true}, {t:"padding",c:false}, {t:"border",c:false}, {t:"spacing",c:false}] },
+            { q: "CSS: تحديد الهوامش الداخلية؟", a: [{t:"padding",c:true}, {t:"margin",c:false}, {t:"insect",c:false}, {t:"gap",c:false}] },
+            { q: "HTML: وسم أكبر عنوان؟", a: [{t:"<h1>",c:true}, {t:"<head>",c:false}, {t:"<title>",c:false}, {t:"<h6>",c:false}] },
+            { q: "HTML: وسم القائمة غير المرتبة؟", a: [{t:"<ul>",c:true}, {t:"<ol>",c:false}, {t:"<li>",c:false}, {t:"<dl>",c:false}] },
+            { q: "HTML: وسم الصورة؟", a: [{t:"<img>",c:true}, {t:"<image>",c:false}, {t:"<pic>",c:false}, {t:"<src>",c:false}] },
+            { q: "HTML: وسم الرابط؟", a: [{t:"<a>",c:true}, {t:"<link>",c:false}, {t:"<href>",c:false}, {t:"<url>",c:false}] },
+            { q: "JS: هل JS حساسة لحالة الأحرف؟", a: [{t:"نعم",c:true}, {t:"لا",c:false}, {t:"أحياناً",c:false}, {t:"في المتغيرات فقط",c:false}] },
+            { q: "JS: ما ناتج true + 1؟", a: [{t:"2",c:true}, {t:"1",c:false}, {t:"true1",c:false}, {t:"error",c:false}] },
+            { q: "JS: ما ناتج !true؟", a: [{t:"false",c:true}, {t:"true",c:false}, {t:"undefined",c:false}, {t:"null",c:false}] },
+            { q: "JS: جملة الشرط المختصرة؟", a: [{t:"Ternary Operator",c:true}, {t:"Short If",c:false}, {t:"Quick If",c:false}, {t:"ElseIf",c:false}] },
+            { q: "ما هي NaN؟", a: [{t:"Not a Number",c:true}, {t:"New a Number",c:false}, {t:"Null and None",c:false}, {t:"No a Name",c:false}] },
+            { q: "دالة لإيجاد أكبر رقم؟", a: [{t:"Math.max()",c:true}, {t:"Math.top()",c:false}, {t:"Math.biggest()",c:false}, {t:"Math.high()",c:false}] },
+            { q: "دالة لتوليد رقم عشوائي؟", a: [{t:"Math.random()",c:true}, {t:"Math.rand()",c:false}, {t:"Math.gen()",c:false}, {t:"random()",c:false}] },
+            { q: "تقريب الرقم لأقرب عدد صحيح؟", a: [{t:"Math.round()",c:true}, {t:"Math.floor()",c:false}, {t:"Math.ceil()",c:false}, {t:"Math.int()",c:false}] },
+            { q: "التقريب للأدنى دائماً؟", a: [{t:"Math.floor()",c:true}, {t:"Math.ceil()",c:false}, {t:"Math.down()",c:false}, {t:"Math.low()",c:false}] },
+            { q: "التقريب للأعلى دائماً؟", a: [{t:"Math.ceil()",c:true}, {t:"Math.top()",c:false}, {t:"Math.up()",c:false}, {t:"Math.high()",c:false}] },
+            { q: "حدث تغيير قيمة حقل إدخال؟", a: [{t:"change",c:true}, {t:"click",c:false}, {t:"hover",c:false}, {t:"modify",c:false}] },
+            { q: "خاصية CSS لتغيير الخط؟", a: [{t:"font-family",c:true}, {t:"font-type",c:false}, {t:"text-style",c:false}, {t:"font-name",c:false}] },
+            { q: "كيف نجعل النص في الوسط CSS؟", a: [{t:"text-align: center",c:true}, {t:"font-align: center",c:false}, {t:"align: center",c:false}, {t:"center: text",c:false}] },
+            { q: "إخفاء عنصر تماماً CSS؟", a: [{t:"display: none",c:true}, {t:"visibility: hidden",c:false}, {t:"opacity: 0",c:false}, {t:"hide: true",c:false}] },
+            { q: "جعل العنصر مرناً CSS؟", a: [{t:"display: flex",c:true}, {t:"display: block",c:false}, {t:"display: grid",c:false}, {t:"float: left",c:false}] },
+            { q: "تكرار الكود لعدد محدد من المرات؟", a: [{t:"For Loop",c:true}, {t:"While Loop",c:false}, {t:"Do While",c:false}, {t:"If Statement",c:false}] },
+            { q: "ما هو الـ Scope؟", a: [{t:"نطاق رؤية المتغيرات",c:true}, {t:"اسم دالة",c:false}, {t:"نوع بيانات",c:false}, {t:"مكتبة خارجية",c:false}] },
+            { q: "متغيرات let لها نطاق؟", a: [{t:"Block Scope",c:true}, {t:"Function Scope",c:false}, {t:"Global Only",c:false}, {t:"No Scope",c:false}] },
+            { q: "متغيرات var لها نطاق؟", a: [{t:"Function Scope",c:true}, {t:"Block Scope",c:false}, {t:"Class Scope",c:false}, {t:"Tag Scope",c:false}] },
+            { q: "دمج مصفوفتين؟", a: [{t:"concat()",c:true}, {t:"join()",c:false}, {t:"merge()",c:false}, {t:"mix()",c:false}] },
+            { q: "تحويل مصفوفة لنص؟", a: [{t:"join()",c:true}, {t:"concat()",c:false}, {t:"split()",c:false}, {t:"reverse()",c:false}] },
+            { q: "قلب ترتيب المصفوفة؟", a: [{t:"reverse()",c:true}, {t:"sort()",c:false}, {t:"flip()",c:false}, {t:"back()",c:false}] },
+            { q: "ترتيب المصفوفة أبجدياً؟", a: [{t:"sort()",c:true}, {t:"order()",c:false}, {t:"arrange()",c:false}, {t:"list()",c:false}] },
+            { q: "البحث عن عنصر في مصفوفة؟", a: [{t:"includes()",c:true}, {t:"has()",c:false}, {t:"contain()",c:false}, {t:"exist()",c:false}] },
+            { q: "إيجاد الـ Index لعنصر؟", a: [{t:"indexOf()",c:true}, {t:"search()",c:false}, {t:"find()",c:false}, {t:"location()",c:false}] },
+            { q: "إنشاء مصفوفة جديدة معدلة؟", a: [{t:"map()",c:true}, {t:"forEach()",c:false}, {t:"loop()",c:false}, {t:"new()",c:false}] },
+            { q: "تصفية المصفوفة بشرط؟", a: [{t:"filter()",c:true}, {t:"select()",c:false}, {t:"map()",c:false}, {t:"cut()",c:false}] },
+            { q: "هل null === undefined؟", a: [{t:"False",c:true}, {t:"True",c:false}, {t:"Error",c:false}, {t:"Sometimes",c:false}] },
+            { q: "هل null == undefined؟", a: [{t:"True",c:true}, {t:"False",c:false}, {t:"Error",c:false}, {t:"Never",c:false}] },
+            { q: "ما هو الـ Callback؟", a: [{t:"دالة تمرر كمعامل لدالة أخرى",c:true}, {t:"دالة تستدعي نفسها",c:false}, {t:"خطأ برمجي",c:false}, {t:"نوع متغير",c:false}] },
+            { q: "ما هي الـ Promise؟", a: [{t:"كائن لعمليات غير متزامنة",c:true}, {t:"دالة شرطية",c:false}, {t:"مصفوفة",c:false}, {t:"حدث",c:false}] }
+        ];
+
+        let state = {
+            mode: null,
+            score: 0,
+            stage: 1,
+            shield: 100,
+            timeLeft: 0,
+            timer: null,
+            currentQ: null,
+            streak: 0,
+            usedQuestions: []
+        };
+
+        const screens = {
+            start: document.getElementById('start-screen'),
+            game: document.getElementById('game-screen'),
+            end: document.getElementById('end-screen')
+        };
+
+        function switchScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            screens[id].classList.add('active');
+            window.scrollTo(0, 0); // العودة لأعلى الصفحة عند تبديل الشاشة
+        }
+
+        function initGame(mode) {
+            playSound('start');
+            state = {
+                mode: mode,
+                score: 0,
+                stage: 1,
+                shield: 100,
+                timeLeft: mode === 'training' ? 999 : 20,
+                timer: null,
+                currentQ: null,
+                streak: 0,
+                usedQuestions: []
+            };
+
+            updateHUD();
+            switchScreen('game');
+            nextQuestion();
+            if(mode !== 'training') startTimer();
+        }
+
+        function startTimer() {
+            if(state.timer) clearInterval(state.timer);
+            state.timer = setInterval(() => {
+                state.timeLeft--;
+                updateHUD();
+                
+                if(state.timeLeft <= 5) {
+                    document.getElementById('timer-display').style.color = '#ff0055';
+                }
+
+                if(state.timeLeft <= 0) {
+                    gameOver("نفذ الوقت! الهاكرز سيطروا على النظام.");
+                }
+            }, 1000);
+        }
+
+        function updateHUD() {
+            document.getElementById('score-number').innerText = state.score;
+            document.getElementById('shield-integrity').innerText = state.shield + '%';
+            document.getElementById('timer-display').innerText = state.timeLeft;
+            document.getElementById('current-stage').innerText = state.stage;
+            document.getElementById('xp-fill').style.width = (state.stage * 10) + '%';
+            document.getElementById('timer-display').style.color = '#ffd700';
+            
+            // تحديث لون الدرع
+            const shieldEl = document.getElementById('shield-integrity');
+            if(state.shield > 70) shieldEl.style.color = 'var(--primary)';
+            else if(state.shield > 30) shieldEl.style.color = 'orange';
+            else shieldEl.style.color = 'var(--secondary)';
+        }
+
+        function nextQuestion() {
+            // اختيار سؤال عشوائي غير مكرر
+            let available = questionsBank.filter((_, i) => !state.usedQuestions.includes(i));
+            if(available.length === 0) {
+                if(state.mode === 'training') {
+                    state.usedQuestions = []; // إعادة تدوير الأسئلة في التدريب
+                    available = questionsBank;
+                } else {
+                    gameOver("أتممت جميع المهام بنجاح! النظام آمن الآن.");
+                    return;
+                }
+            }
+            
+            const qIndex = Math.floor(Math.random() * available.length);
+            const originalIndex = questionsBank.indexOf(available[qIndex]);
+            state.usedQuestions.push(originalIndex);
+            
+            state.currentQ = available[qIndex];
+            
+            // تحديث الواجهة
+            const storyText = document.getElementById('story-text');
+            if(state.mode === 'campaign' && storyBeats[state.stage-1]) {
+                storyText.innerText = storyBeats[state.stage-1];
+            } else if (state.mode === 'survival') {
+                storyText.innerText = `موجة الهجوم: ${state.stage}`;
+            } else {
+                storyText.innerText = "وضع التدريب: حسّن مهاراتك.";
+            }
+
+            document.getElementById('question-text').innerText = state.currentQ.q;
+            
+            const codePanel = document.getElementById('code-panel');
+            if(state.currentQ.c) {
+                codePanel.style.display = 'block';
+                document.getElementById('code-display').innerText = state.currentQ.c;
+            } else {
+                codePanel.style.display = 'none';
+            }
+
+            const choicesDiv = document.getElementById('choices-panel');
+            choicesDiv.innerHTML = '';
+            
+            // خلط الإجابات
+            let answers = [...state.currentQ.a].sort(() => Math.random() - 0.5);
+            
+            answers.forEach(ans => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerText = ans.t;
+                btn.onclick = () => checkAnswer(ans.c, btn);
+                choicesDiv.appendChild(btn);
+            });
+
+            // إعادة ضبط الوقت في وضع البقاء
+            if(state.mode === 'survival') {
+                state.timeLeft = Math.max(5, 20 - Math.floor(state.stage/2));
+            } else if (state.mode === 'campaign') {
+                state.timeLeft = 25;
+            }
+        }
+
+        function checkAnswer(isCorrect, btn) {
+            // تعطيل الأزرار لمنع النقر المتعدد
+            const btns = document.querySelectorAll('.choice-btn');
+            btns.forEach(b => b.disabled = true);
+
+            if(isCorrect) {
+                playSound('correct');
+                btn.classList.add('correct');
+                state.score += (state.streak * 5) + 10;
+                state.streak++;
+                state.stage++;
+                
+                if(state.mode === 'survival') {
+                    state.shield = Math.min(100, state.shield + 5);
+                }
+
+                setTimeout(() => {
+                    nextQuestion();
+                    updateHUD();
+                }, 800);
+            } else {
+                playSound('wrong');
+                btn.classList.add('wrong');
+                state.streak = 0;
+                
+                // إظهار الإجابة الصحيحة
+                btns.forEach(b => {
+                    const txt = b.innerText;
+                    const correctAns = state.currentQ.a.find(x => x.c).t;
+                    if(txt === correctAns) b.classList.add('correct');
+                });
+
+                if(state.mode === 'training') {
+                    // في التدريب لا نخسر، فقط ننقص شوية
+                    setTimeout(() => {
+                        nextQuestion();
+                        updateHUD();
+                    }, 1500);
+                } else {
+                    state.shield -= 25;
+                    updateHUD();
+                    
+                    if(state.shield <= 0) {
+                        setTimeout(() => gameOver("تحطم جدار الحماية! النظام مخترق."), 1000);
+                    } else {
+                        setTimeout(() => {
+                            nextQuestion();
+                        }, 1000);
+                    }
+                }
+            }
+        }
+
+        function gameOver(msg) {
+            clearInterval(state.timer);
+            document.getElementById('end-title').innerText = state.shield <= 0 || state.timeLeft <= 0 ? "فشلت المهمة" : "نجحت المهمة";
+            document.getElementById('end-message').innerText = msg;
+            document.getElementById('final-score').innerText = state.score;
+            document.getElementById('end-title').style.color = state.shield <= 0 || state.timeLeft <= 0 ? 'var(--secondary)' : 'var(--primary)';
+            switchScreen('end');
+        }
+
+        function goHome() {
+            clearInterval(state.timer);
+            playSound('click');
+            switchScreen('start');
+        }
+
+        function restartGame() {
+            playSound('click');
+            initGame(state.mode);
+        }
+    </script>
+</body>
+</html>
