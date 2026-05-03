@@ -32,6 +32,8 @@ function defaultState() {
     volume: 0.7,
     darkMode: false,
     achievements: [],
+    highScores: {},       // { chapterId: percentage }
+    onboardingDone: false,
   };
 }
 
@@ -64,7 +66,7 @@ function doReset() {
   saveState();
   updateHomeUI();
   closeSettings();
-  showCustomAlert('✅', 'تم بنجاح', 'تم إعادة تعيين كل بياناتك.');
+  showToast('✅ تم حذف كل البيانات وإعادة التعيين', 'success');
 }
 
 // =============================================
@@ -142,38 +144,166 @@ const SFX = {
 };
 
 // =============================================
+// SECTION 5.5: TOAST NOTIFICATIONS
+// =============================================
+
+const TOAST_QUEUE = [];
+let toastActive = false;
+
+function showToast(msg, type = 'info', duration = 3000) {
+  TOAST_QUEUE.push({ msg, type, duration });
+  if (!toastActive) processToastQueue();
+}
+
+function processToastQueue() {
+  if (TOAST_QUEUE.length === 0) { toastActive = false; return; }
+  toastActive = true;
+  const { msg, type, duration } = TOAST_QUEUE.shift();
+  const container = document.getElementById('toast-container');
+  if (!container) { processToastQueue(); return; }
+
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️', xp: '⭐' };
+  toast.innerHTML = `<span class="toast-icon">${icons[type] || 'ℹ️'}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('show'));
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.classList.add('hide');
+    setTimeout(() => { toast.remove(); processToastQueue(); }, 400);
+  }, duration);
+}
+
+
+
+// =============================================
 // SECTION 5: SCREEN NAVIGATION
 // =============================================
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  syncBottomNav(id);
+  // scroll to top
+  window.scrollTo(0, 0);
 }
 
 // =============================================
 // SECTION 6: LOADING & INIT
 // =============================================
 
+const CODING_QUOTES = [
+  '"البرمجة هي فن حل المشاكل بطريقة إبداعية"',
+  '"الكود الجيد يُقرأ كقصيدة شعر" — Donald Knuth',
+  '"أولاً اجعله يعمل، ثم اجعله صحيحاً، ثم اجعله سريعاً"',
+  '"كل مبرمج عظيم بدأ بـ Hello World"',
+  '"console.log(\'مرحباً بعالم البرمجة!\');"',
+  '"function dream() { return reality * effort; }"',
+  '"Debug = كن محققاً في جريمة ارتكبتها أنت"',
+  '"الخطأ الأول علّمني أكثر مما علّمتني كتب كثيرة"',
+];
+
 window.onload = () => {
   loadState();
   applyDarkMode();
+  registerPWA();
+  initOfflineDetection();
+
+  const quoteEl = el('load-quote');
+  if (quoteEl) quoteEl.textContent = CODING_QUOTES[Math.floor(Math.random() * CODING_QUOTES.length)];
 
   const loadFill = el('load-fill');
+  const loadPct  = el('load-pct');
   let progress = 0;
   const iv = setInterval(() => {
     progress += 4;
     if (loadFill) loadFill.style.width = progress + '%';
+    if (loadPct)  loadPct.textContent  = Math.min(progress, 100) + '%';
     if (progress >= 100) {
       clearInterval(iv);
       el('loading-screen').classList.remove('active');
-      showScreen('home-screen');
-      renderChapters();
-      updateHomeUI();
+      if (!state.onboardingDone) {
+        showScreen('onboarding-screen');
+        initOnboarding();
+      } else {
+        showScreen('home-screen');
+        renderChapters();
+        updateHomeUI();
+      }
     }
   }, 40);
 
   bindEvents();
 };
+
+function registerPWA() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+
+function initOfflineDetection() {
+  function updateStatus() {
+    const banner = el('offline-banner');
+    if (!banner) return;
+    if (!navigator.onLine) {
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+  window.addEventListener('online',  () => { updateStatus(); showToast('✅ عاد الاتصال بالإنترنت', 'success'); });
+  window.addEventListener('offline', () => { updateStatus(); showToast('📵 لا يوجد إنترنت — اللعبة تعمل offline!', 'info', 4000); });
+  updateStatus();
+}
+
+function initOnboarding() {
+  let currentSlide = 0;
+  const totalSlides = 4;
+  const slides = document.querySelectorAll('.ob-slide');
+  const dots   = document.querySelectorAll('.ob-dot');
+  const nextBtn = el('ob-next-btn');
+  if (!nextBtn) return;
+
+  document.querySelectorAll('#ob-avatar-grid .av-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#ob-avatar-grid .av-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.avatar = btn.dataset.av;
+      SFX.click();
+    });
+  });
+
+  function goToSlide(n) {
+    slides.forEach((s, i) => s.classList.toggle('active', i === n));
+    dots.forEach((d, i)   => d.classList.toggle('active', i === n));
+    currentSlide = n;
+    nextBtn.textContent = n === totalSlides - 1 ? '🚀 ابدأ اللعب!' : 'التالي ←';
+    if (n === 2) setTimeout(() => el('ob-name-input') && el('ob-name-input').focus(), 100);
+  }
+
+  nextBtn.addEventListener('click', () => {
+    SFX.click();
+    if (currentSlide === 2) {
+      const name = el('ob-name-input') && el('ob-name-input').value.trim();
+      if (name) state.playerName = name;
+    }
+    if (currentSlide === totalSlides - 1) {
+      state.onboardingDone = true;
+      saveState();
+      showScreen('home-screen');
+      renderChapters();
+      updateHomeUI();
+      showToast(`أهلاً ${state.playerName}! 🎉 ابدأ رحلتك الآن`, 'success', 3500);
+    } else {
+      goToSlide(currentSlide + 1);
+    }
+  });
+}
+
+
 
 // =============================================
 // SECTION 7: HOME UI
@@ -187,8 +317,9 @@ function updateHomeUI() {
   const xpInLevel = state.xp % XP_PER_LEVEL;
   el('home-xp-fill').style.width = (xpInLevel / XP_PER_LEVEL * 100) + '%';
 
-  // الشاشة الرئيسية: أسئلة تم حلها فقط
   el('stat-questions').textContent = state.questionsAnswered;
+  el('stat-chapters').textContent  = state.chaptersCompleted.length;
+  el('stat-streak').textContent    = state.streak;
 
   // الإعدادات: الصحيح والخاطئ والفصول والأيام
   if (el('sp-correct'))  el('sp-correct').textContent  = state.totalCorrect;
@@ -206,12 +337,25 @@ function renderChapters() {
   if (!grid || typeof CHAPTERS === 'undefined') return;
 
   grid.innerHTML = CHAPTERS.map(ch => {
-    const done = state.chaptersCompleted.includes(ch.id);
+    const done      = state.chaptersCompleted.includes(ch.id);
+    const hs        = (state.highScores && state.highScores[ch.id]) || 0;
+    const answered  = state['ch_answered_' + ch.id] || 0;
+    const total     = ch.questions.length;
+    const pct       = total > 0 ? Math.round(answered / total * 100) : 0;
+    const hsBadge   = hs > 0 ? `<div class="ch-hs">🏆 أعلى: ${hs}%</div>` : '';
+    const progressBar = `
+      <div class="ch-progress-wrap">
+        <div class="ch-progress-bar" style="width:${pct}%"></div>
+      </div>
+      <div class="ch-progress-label">${pct}% تم الإجابة</div>
+    `;
     return `
       <div class="chapter-card ${done ? 'done' : ''}" style="border-top:5px solid ${ch.color}" onclick="startChapter(${ch.id})">
         <div class="ch-icon">${ch.icon}</div>
         <div class="ch-title">${ch.title}</div>
         <div class="ch-count">${ch.questions.length} سؤال ${done ? '✅' : ''}</div>
+        ${hsBadge}
+        ${progressBar}
         ${ch.isReview ? '<div class="ch-badge">مراجعة</div>' : ''}
       </div>`;
   }).join('');
@@ -421,11 +565,13 @@ function recordAnswer(isCorrect, explanation) {
     state.totalCorrect++;
     checkLevelUp();
     SFX.correct();
+    haptic('success');
   } else {
     session.wrong++;
     session.streak = 0;
     state.totalWrong++;
     SFX.wrong();
+    haptic('error');
   }
   state.questionsAnswered++;
   saveState();
@@ -440,9 +586,20 @@ function showFeedback(isCorrect, detail, isEssay = false) {
   el('fb-icon').textContent  = isCorrect ? '✅' : '❌';
   el('fb-title').textContent = isCorrect ? (isEssay ? 'إجابة مقبولة! 🎉' : 'إجابة صحيحة! 🎉') : 'إجابة خاطئة';
   el('fb-detail').textContent = detail || '';
-  el('correct-count').textContent = session.correct;
-  el('wrong-count').textContent   = session.wrong;
-  el('current-xp').textContent    = session.xpEarned;
+
+  // تحديث العدادات مع animation
+  function bumpEl(id, val) {
+    const span = el(id);
+    if (!span) return;
+    span.textContent = val;
+    span.classList.remove('bump');
+    void span.offsetWidth;
+    span.classList.add('bump');
+    setTimeout(() => span.classList.remove('bump'), 300);
+  }
+  bumpEl('correct-count', session.correct);
+  bumpEl('wrong-count',   session.wrong);
+  bumpEl('current-xp',    session.xpEarned);
 }
 
 // =============================================
@@ -523,6 +680,18 @@ function endGame() {
     state.chaptersCompleted.push(session.chapterId);
   }
 
+  // 🏆 حفظ الـ High Score
+  if (session.chapterId) {
+    if (!state.highScores) state.highScores = {};
+    const prev = state.highScores[session.chapterId] || 0;
+    if (pct > prev) {
+      state.highScores[session.chapterId] = pct;
+      if (prev > 0) showToast(`🏆 رقم قياسي جديد! ${pct}% في ${session.title}`, 'xp', 4000);
+    }
+    // تتبع عدد الأسئلة المُجابة لكل فصل
+    state['ch_answered_' + session.chapterId] = (state['ch_answered_' + session.chapterId] || 0) + total;
+  }
+
   // daily streak
   if (session.isDaily) {
     const today = new Date().toDateString();
@@ -558,6 +727,7 @@ function checkLevelUp() {
     el('level-up-banner').style.display = 'block';
     SFX.levelup();
     saveState();
+    showToast(`🎉 ترقية! وصلت المستوى ${newLevel}`, 'xp', 4000);
   }
 }
 
@@ -590,14 +760,41 @@ function renderReview() {
 // =============================================
 
 const ACHIEVEMENTS_DEF = [
-  { id: 'first_correct',  icon: '🎯', name: 'أول إجابة صحيحة',   condition: s => s.totalCorrect >= 1 },
-  { id: 'ten_correct',    icon: '🔟', name: '10 إجابات صحيحة',  condition: s => s.totalCorrect >= 10 },
-  { id: 'fifty_correct',  icon: '🏅', name: '50 إجابة صحيحة',   condition: s => s.totalCorrect >= 50 },
-  { id: 'level5',         icon: '⬆️', name: 'المستوى 5',         condition: s => s.level >= 5 },
-  { id: 'chapter1',       icon: '📚', name: 'أكملت فصلاً',       condition: s => s.chaptersCompleted.length >= 1 },
-  { id: 'three_chapters', icon: '📖', name: 'ثلاثة فصول!',       condition: s => s.chaptersCompleted.length >= 3 },
-  { id: 'streak3',        icon: '🔥', name: 'سلسلة 3 أيام',      condition: s => s.streak >= 3 },
-  { id: 'xp500',          icon: '⚡', name: '500 XP مكتسب',     condition: s => s.xp >= 500 },
+  // إنجازات الإجابات الصحيحة
+  { id: 'first_correct',    icon: '🎯', name: 'أول إجابة صحيحة',    condition: s => s.totalCorrect >= 1 },
+  { id: 'ten_correct',      icon: '🔟', name: '10 إجابات صحيحة',    condition: s => s.totalCorrect >= 10 },
+  { id: 'twenty_five',      icon: '💪', name: '25 إجابة صحيحة',     condition: s => s.totalCorrect >= 25 },
+  { id: 'fifty_correct',    icon: '🏅', name: '50 إجابة صحيحة',     condition: s => s.totalCorrect >= 50 },
+  { id: 'hundred_correct',  icon: '💯', name: '100 إجابة صحيحة',    condition: s => s.totalCorrect >= 100 },
+  { id: 'legend_200',       icon: '🦁', name: '200 إجابة — أسطورة!', condition: s => s.totalCorrect >= 200 },
+
+  // إنجازات المستوى
+  { id: 'level3',           icon: '⬆️', name: 'المستوى 3',           condition: s => s.level >= 3 },
+  { id: 'level5',           icon: '🚀', name: 'المستوى 5',           condition: s => s.level >= 5 },
+  { id: 'level10',          icon: '👑', name: 'المستوى 10 — ملك!',   condition: s => s.level >= 10 },
+
+  // إنجازات الفصول
+  { id: 'chapter1',         icon: '📚', name: 'أكملت فصلاً',        condition: s => s.chaptersCompleted.length >= 1 },
+  { id: 'three_chapters',   icon: '📖', name: 'ثلاثة فصول!',        condition: s => s.chaptersCompleted.length >= 3 },
+  { id: 'five_chapters',    icon: '📕', name: 'خمسة فصول!',         condition: s => s.chaptersCompleted.length >= 5 },
+  { id: 'all_chapters',     icon: '🎓', name: 'أكملت كل الفصول!',   condition: s => s.chaptersCompleted.length >= (typeof CHAPTERS !== 'undefined' ? CHAPTERS.length : 999) },
+
+  // إنجازات الأيام المتتالية
+  { id: 'streak3',          icon: '🔥', name: 'سلسلة 3 أيام',       condition: s => s.streak >= 3 },
+  { id: 'streak7',          icon: '🌟', name: 'سلسلة أسبوع كامل!',  condition: s => s.streak >= 7 },
+  { id: 'streak30',         icon: '🏆', name: 'شهر متواصل!',        condition: s => s.streak >= 30 },
+
+  // إنجازات XP
+  { id: 'xp100',            icon: '⚡', name: '100 XP مكتسب',       condition: s => s.xp >= 100 },
+  { id: 'xp500',            icon: '💥', name: '500 XP مكتسب',       condition: s => s.xp >= 500 },
+  { id: 'xp1000',           icon: '💎', name: '1000 XP — ماسي!',    condition: s => s.xp >= 1000 },
+  { id: 'xp5000',           icon: '🌌', name: '5000 XP — خارق!',    condition: s => s.xp >= 5000 },
+
+  // إنجازات خاصة
+  { id: 'daily_done',       icon: '⚡', name: 'أكملت تحدي اليوم',   condition: s => s.lastDailyDate !== '' },
+  { id: 'no_wrong',         icon: '🎖️', name: 'بدون أخطاء!',        condition: s => s.totalCorrect >= 10 && s.totalWrong === 0 },
+  { id: 'speedster',        icon: '⚡', name: '50 سؤال تم حله',      condition: s => s.questionsAnswered >= 50 },
+  { id: 'question_100',     icon: '🤖', name: '100 سؤال تم حله',     condition: s => s.questionsAnswered >= 100 },
 ];
 
 function checkAchievements() {
@@ -616,18 +813,48 @@ function showAchievementPopup(ach) {
   const popup = el('achievement-popup');
   popup.style.display = 'flex';
   setTimeout(() => { popup.style.display = 'none'; }, 3500);
+  showToast(`${ach.icon} إنجاز جديد: ${ach.name}`, 'xp', 3000);
 }
 
 function renderAchievementsScreen() {
-  el('achievements-grid').innerHTML = ACHIEVEMENTS_DEF.map(ach => {
-    const unlocked = state.achievements.includes(ach.id);
-    return `
-      <div class="chapter-card" style="opacity:${unlocked ? 1 : 0.4}; border-top:5px solid var(--warning)">
-        <div class="ch-icon">${ach.icon}</div>
-        <div class="ch-title">${ach.name}</div>
-        <div class="ch-count">${unlocked ? '✅ مُفتَح' : '🔒 مغلق'}</div>
-      </div>`;
-  }).join('');
+  const categories = [
+    { label: '🎯 الإجابات الصحيحة', ids: ['first_correct','ten_correct','twenty_five','fifty_correct','hundred_correct','legend_200'] },
+    { label: '⬆️ المستويات',         ids: ['level3','level5','level10'] },
+    { label: '📚 الفصول',            ids: ['chapter1','three_chapters','five_chapters','all_chapters'] },
+    { label: '🔥 الأيام المتتالية',  ids: ['streak3','streak7','streak30'] },
+    { label: '⚡ نقاط XP',           ids: ['xp100','xp500','xp1000','xp5000'] },
+    { label: '🌟 إنجازات خاصة',      ids: ['daily_done','no_wrong','speedster','question_100'] },
+  ];
+
+  const unlocked = state.achievements.length;
+  const total = ACHIEVEMENTS_DEF.length;
+
+  el('achievements-grid').innerHTML = `
+    <div class="ach-summary">
+      <div class="ach-sum-bar-wrap">
+        <div class="ach-sum-bar" style="width:${Math.round(unlocked/total*100)}%"></div>
+      </div>
+      <div class="ach-sum-text">${unlocked} / ${total} إنجاز مفتوح</div>
+    </div>
+    ${categories.map(cat => {
+      const items = ACHIEVEMENTS_DEF.filter(a => cat.ids.includes(a.id));
+      return `
+        <div class="ach-category">
+          <div class="ach-cat-label">${cat.label}</div>
+          <div class="ach-cat-grid">
+            ${items.map(ach => {
+              const isUnlocked = state.achievements.includes(ach.id);
+              return `
+                <div class="ach-card ${isUnlocked ? 'unlocked' : 'locked'}">
+                  <div class="ach-card-icon">${isUnlocked ? ach.icon : '🔒'}</div>
+                  <div class="ach-card-name">${ach.name}</div>
+                  <div class="ach-card-status">${isUnlocked ? '✅ مفتوح' : 'مغلق'}</div>
+                </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }).join('')}
+  `;
 }
 
 // =============================================
@@ -687,6 +914,10 @@ function applyDarkMode() {
 function openSettings() {
   el('player-name-input').value = state.playerName;
   el('volume-slider').value = Math.round(state.volume * 100);
+  // sync avatar
+  document.querySelectorAll('#settings-avatar-grid .av-btn-sm').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.av === state.avatar);
+  });
   el('settings-modal').style.display = 'flex';
 }
 
@@ -714,6 +945,52 @@ function bindEvents() {
   el('settings-btn').addEventListener('click', () => { SFX.click(); openSettings(); });
   el('close-settings').addEventListener('click', closeSettings);
   el('reset-progress').addEventListener('click', resetState);
+
+  // Avatar picker في الإعدادات
+  document.querySelectorAll('#settings-avatar-grid .av-btn-sm').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#settings-avatar-grid .av-btn-sm').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.avatar = btn.dataset.av;
+      el('home-avatar').textContent = state.avatar;
+      saveState();
+      SFX.click();
+      showToast(`تم اختيار الأفاتار ${btn.dataset.av}`, 'success');
+    });
+  });
+
+  // Keyboard shortcuts button
+  const showKb = el('show-kb-hints');
+  if (showKb) showKb.addEventListener('click', () => { el('kb-hints').style.display = 'block'; closeSettings(); });
+  const closeKb = el('kb-close');
+  if (closeKb) closeKb.addEventListener('click', () => { el('kb-hints').style.display = 'none'; });
+
+  // Global keyboard shortcuts (desktop)
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const active = document.querySelector('.screen.active');
+    const screen = active ? active.id : '';
+
+    if (e.key === '?') {
+      const kb = el('kb-hints');
+      kb.style.display = kb.style.display === 'none' ? 'block' : 'none';
+      return;
+    }
+    if (e.key.toLowerCase() === 'h') { SFX.click(); showScreen('home-screen'); return; }
+    if (e.key.toLowerCase() === 'd') { state.darkMode = !state.darkMode; applyDarkMode(); saveState(); return; }
+    if (e.key.toLowerCase() === 's') { SFX.click(); openSettings(); return; }
+
+    if (screen === 'game-screen' && !session.answered) {
+      const optBtns = document.querySelectorAll('.option-btn:not([disabled])');
+      const map = { '1': 0, '2': 1, '3': 2, '4': 3 };
+      if (map[e.key] !== undefined && optBtns[map[e.key]]) {
+        optBtns[map[e.key]].click();
+      }
+    }
+    if (screen === 'game-screen' && session.answered && e.key === 'Enter') {
+      SFX.click(); nextQuestion();
+    }
+  });
 
   // مودال إعادة التعيين
   el('reset-confirm-yes').addEventListener('click', () => { closeResetConfirm(); doReset(); });
@@ -812,6 +1089,43 @@ function shuffle(arr) {
 function escStr(s) {
   return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
 }
+
+// Bottom Nav helper
+function navTo(screenId, btn) {
+  SFX.click();
+  // لا تروح لشاشة اللعبة من الـ nav
+  const gameActive = document.querySelector('#game-screen.active');
+  if (gameActive) return;
+  showScreen(screenId);
+  updateHomeUI();
+  // تفعيل الزرار الصح
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+// sync bottom nav with current screen
+function syncBottomNav(screenId) {
+  const map = {
+    'home-screen': 'bnav-home',
+    'chapters-screen': 'bnav-chapters',
+    'achievements-screen': 'bnav-ach',
+  };
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  const targetId = map[screenId];
+  if (targetId) { const btn = el(targetId); if (btn) btn.classList.add('active'); }
+  // إخفاء الـ nav أثناء اللعبة
+  const nav = el('bottom-nav');
+  if (!nav) return;
+  nav.style.display = (screenId === 'game-screen' || screenId === 'results-screen' || screenId === 'review-screen' || screenId === 'onboarding-screen') ? 'none' : 'flex';
+}
+
+// Haptic feedback
+function haptic(type = 'light') {
+  if (!navigator.vibrate) return;
+  const patterns = { light: [10], medium: [20], heavy: [30, 10, 30], success: [10, 30, 10], error: [50, 20, 50] };
+  navigator.vibrate(patterns[type] || [10]);
+}
+
 
 // =============================================
 // SECTION 23: NOTES (دفتر الملاحظات)
@@ -936,3 +1250,149 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+// =============================================
+// SECTION 24: CUSTOM CURSOR (ديسكتوب فقط)
+// =============================================
+
+(function initCursor() {
+  // شغّل بس لو مش touch device
+  const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  if (isTouch) return;
+
+  const cursor  = document.getElementById('custom-cursor');
+  const ring    = document.getElementById('cursor-ring');
+  if (!cursor || !ring) return;
+
+  let mouseX = -100, mouseY = -100;
+  let ringX  = -100, ringY  = -100;
+  let rafId;
+
+  // تحديث موقع الـ cursor فوراً
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    cursor.style.left = mouseX + 'px';
+    cursor.style.top  = mouseY + 'px';
+  });
+
+  // الـ ring بيتبع بـ lag (easing)
+  function animateRing() {
+    ringX += (mouseX - ringX) * 0.13;
+    ringY += (mouseY - ringY) * 0.13;
+    ring.style.left = ringX + 'px';
+    ring.style.top  = ringY + 'px';
+    rafId = requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  // hover على الأزرار والعناصر القابلة للضغط
+  const hoverSel = 'button, a, .menu-card, .chapter-card, .option-btn, .ach-card, [onclick], input, textarea, select, label';
+
+  document.addEventListener('mouseover', e => {
+    const t = e.target.closest(hoverSel);
+    if (t) {
+      cursor.classList.add('hovering');
+      ring.classList.add('hovering');
+    }
+    // حقول النص
+    if (e.target.matches('input[type="text"], textarea')) {
+      cursor.classList.add('text-mode');
+      ring.classList.add('text-mode');
+    }
+  });
+
+  document.addEventListener('mouseout', e => {
+    const t = e.target.closest(hoverSel);
+    if (t) {
+      cursor.classList.remove('hovering');
+      ring.classList.remove('hovering');
+    }
+    cursor.classList.remove('text-mode');
+    ring.classList.remove('text-mode');
+  });
+
+  // حالة الضغط
+  document.addEventListener('mousedown', () => {
+    cursor.classList.add('clicking');
+    ring.classList.add('clicking');
+  });
+  document.addEventListener('mouseup', () => {
+    cursor.classList.remove('clicking');
+    ring.classList.remove('clicking');
+  });
+
+  // إخفاء لما يخرج من النافذة
+  document.addEventListener('mouseleave', () => {
+    cursor.style.opacity = '0';
+    ring.style.opacity   = '0';
+  });
+  document.addEventListener('mouseenter', () => {
+    cursor.style.opacity = '1';
+    ring.style.opacity   = '1';
+  });
+})();
+
+// =============================================
+// SECTION 25: TOUCH RIPPLE EFFECT (موبايل)
+// =============================================
+
+(function initRipple() {
+  const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  if (!isTouch) return;
+
+  const rippleSel = '.menu-card, .option-btn, .action-btn, .chapter-card, .back-btn, .next-btn, .submit-btn, .icon-btn, .notes-add-btn, .close-modal, .danger-btn';
+
+  document.addEventListener('touchstart', function(e) {
+    const btn = e.target.closest(rippleSel);
+    if (!btn) return;
+
+    const rect   = btn.getBoundingClientRect();
+    const touch  = e.touches[0];
+    const size   = Math.max(rect.width, rect.height) * 2;
+    const x      = touch.clientX - rect.left - size / 2;
+    const y      = touch.clientY - rect.top  - size / 2;
+
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px;`;
+    btn.appendChild(ripple);
+
+    ripple.addEventListener('animationend', () => ripple.remove());
+  }, { passive: true });
+})();
+
+// =============================================
+// SECTION 26: SWIPE TO GO BACK (موبايل)
+// =============================================
+
+(function initSwipe() {
+  const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  if (!isTouch) return;
+
+  let startX = 0, startY = 0;
+
+  document.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+
+    // swipe يمين (من شمال للـ يمين) أكتر من 80px وأفقي
+    if (dx > 80 && dy < 60) {
+      const active = document.querySelector('.screen.active');
+      if (!active) return;
+      const id = active.id;
+
+      // رجوع حسب الشاشة الحالية
+      if (id === 'chapters-screen' || id === 'achievements-screen') {
+        SFX.click(); showScreen('home-screen');
+      } else if (id === 'review-screen') {
+        SFX.click(); showScreen('results-screen');
+      }
+      // game-screen: بيستخدم زرار الخروج المخصص
+    }
+  }, { passive: true });
+})();
