@@ -645,7 +645,7 @@ button {
   border-top-left-radius: var(--radius-lg);
   border-top-right-radius: var(--radius-lg);
   animation: slideUp 0.3s ease forwards;
-  z-index: 100;
+  z-index: 500;
 }
 
 .feedback-bar.success { background: var(--success-bg); color: #065f46; }
@@ -762,6 +762,8 @@ button {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  overflow-y: auto;
+  padding: 20px 0;
 }
 
 .modal-box {
@@ -770,6 +772,9 @@ button {
   border-radius: var(--radius-lg);
   width: 90%;
   max-width: 400px;
+  max-height: 88vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow-md);
   border: 1px solid var(--border-color);
 }
@@ -1009,7 +1014,15 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
   justify-content: flex-start; /* يمين في RTL */
   padding: 6px 18px;
   pointer-events: none;
-  background: transparent;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 6px rgba(67,97,238,0.07);
+  /* ثبات تام على الموبايل */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .salah-text {
@@ -1034,7 +1047,7 @@ input[type="range"] { width: 100%; accent-color: var(--primary); }
 
 /* تعويض الشريط العلوي */
 body {
-  padding-top: 34px;
+  padding-top: 38px;
 }
 
 /* لوجو محسّن في شاشة التحميل */
@@ -1107,7 +1120,7 @@ body {
 
 /* أساسيات الموبايل */
 @media (max-width: 480px) {
-  body { padding-top: 30px; }
+  body { padding-top: 34px; }
 
   .salah-text { font-size: 0.88rem; }
 
@@ -1379,7 +1392,7 @@ body.dark-mode .q-code-block {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 800;
+  z-index: 600;
   border: none;
   transition: transform 0.25s cubic-bezier(0.175,0.885,0.32,1.4),
               box-shadow 0.25s ease;
@@ -1417,6 +1430,8 @@ body.dark-mode .q-code-block {
   max-height: 85vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1100;
 }
 
 .notes-header {
@@ -1601,4 +1616,1200 @@ body.dark-mode .q-code-block {
   }
   .notes-modal-box { max-height: 92vh; }
   .notes-list { max-height: 260px; }
+}
+/* =============================================
+   FIXES — إصلاحات إضافية
+   ============================================= */
+
+/* إصلاح: الـ feedback-bar لا يتداخل مع الملاحظات */
+#notes-modal.modal-overlay {
+  z-index: 1050;
+}
+
+/* إصلاح: الـ next-btn داخل feedback-bar */
+.feedback-bar .next-btn {
+  position: relative;
+  z-index: 1;
+  pointer-events: all;
+  flex-shrink: 0;
+}
+
+/* إصلاح: question-card على الموبايل مع padding كافي للـ feedback bar */
+@media (max-width: 480px) {
+  #game-screen.active {
+    padding-bottom: 120px;
+  }
+  .notes-fab {
+    bottom: 20px;
+    left: 16px;
+    width: 52px;
+    height: 52px;
+  }
+  .notes-modal-box { max-height: 92vh; }
+  .notes-list { max-height: 260px; }
+}
+
+/* تحسين عرض الإنجازات */
+.achievements-grid .chapter-card {
+  cursor: default;
+}
+.achievements-grid .chapter-card:hover {
+  transform: none;
+}
+.achievements-grid .chapter-card[style*="opacity: 1"]:hover,
+.achievements-grid .chapter-card[style*="opacity:1"]:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  cursor: default;
+}
+
+/* =============================================
+   ACHIEVEMENTS SCREEN — فئات الإنجازات
+   ============================================= */
+
+/* تغيير grid لـ column عشان نعرض الفئات */
+.achievements-grid {
+  display: flex !important;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ملخص التقدم */
+.ach-summary {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ach-sum-bar-wrap {
+  width: 100%;
+  height: 10px;
+  background: var(--border-color);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.ach-sum-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: var(--radius-pill);
+  transition: width 0.6s ease;
+}
+.ach-sum-text {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* فئة الإنجازات */
+.ach-category {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.ach-cat-label {
+  padding: 12px 16px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  background: linear-gradient(135deg, rgba(67,97,238,0.06), rgba(76,201,240,0.04));
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+.ach-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--border-color);
+}
+
+/* بطاقة الإنجاز الواحد */
+.ach-card {
+  background: var(--surface);
+  padding: 16px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+}
+.ach-card.unlocked {
+  background: linear-gradient(135deg, rgba(67,97,238,0.04), rgba(76,201,240,0.03));
+}
+.ach-card.unlocked:hover {
+  background: rgba(67,97,238,0.09);
+}
+.ach-card.locked {
+  opacity: 0.45;
+}
+.ach-card-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.ach-card-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+.ach-card-status {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.ach-card.unlocked .ach-card-status {
+  color: var(--success);
+}
+
+/* موبايل */
+@media (max-width: 480px) {
+  .ach-cat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ach-card { padding: 12px 8px; }
+  .ach-card-icon { font-size: 1.6rem; }
+  .ach-card-name { font-size: 0.72rem; }
+}
+
+/* =============================================
+   SETTINGS MODAL — إصلاح الـ scroll
+   ============================================= */
+#settings-modal .modal-box {
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* تأكد إن البادنج السفلي كافي */
+  padding-bottom: 24px;
+}
+/* الـ modal overlay يسمح بالـ scroll ومتمركز */
+#settings-modal.modal-overlay {
+  align-items: flex-start;
+  padding: 16px 0;
+  overflow-y: auto;
+}
+
+/* =============================================
+   CUSTOM CURSOR — مؤشر مخصص (ديسكتوب فقط)
+   ============================================= */
+
+/* إخفاء الـ cursor الافتراضي على ديسكتوب */
+@media (hover: hover) and (pointer: fine) {
+  *, *::before, *::after {
+    cursor: none !important;
+  }
+
+  /* الـ cursor الرئيسي */
+  #custom-cursor {
+    position: fixed;
+    top: 0; left: 0;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.12s ease, opacity 0.3s ease;
+    will-change: transform;
+  }
+
+  /* نقطة الـ cursor */
+  #cursor-dot {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    transition: width 0.2s ease, height 0.2s ease, background 0.2s ease;
+    box-shadow: 0 0 8px rgba(67,97,238,0.6);
+  }
+
+  /* حلقة الـ cursor */
+  #cursor-ring {
+    position: fixed;
+    top: 0; left: 0;
+    width: 36px;
+    height: 36px;
+    border: 2px solid rgba(67,97,238,0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99998;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease,
+                border-color 0.3s ease, transform 0.08s ease;
+    will-change: transform;
+  }
+
+  /* حالة hover على الأزرار */
+  #custom-cursor.hovering #cursor-dot {
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    box-shadow: 0 0 14px rgba(247,37,133,0.7);
+  }
+
+  #cursor-ring.hovering {
+    width: 52px;
+    height: 52px;
+    border-color: rgba(247,37,133,0.5);
+    border-width: 2px;
+  }
+
+  /* حالة الضغط */
+  #custom-cursor.clicking #cursor-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+  }
+
+  #cursor-ring.clicking {
+    width: 28px;
+    height: 28px;
+    border-color: var(--accent);
+    border-width: 3px;
+  }
+
+  /* على حقول النص - شكل I-beam */
+  #custom-cursor.text-mode #cursor-dot {
+    width: 2px;
+    height: 20px;
+    border-radius: 1px;
+    background: var(--primary);
+  }
+  #cursor-ring.text-mode {
+    opacity: 0;
+  }
+}
+
+/* =============================================
+   MOBILE IMPROVEMENTS — تحسينات الموبايل
+   ============================================= */
+
+/* Bottom Navigation Bar */
+@media (max-width: 768px) and (hover: none) {
+
+  /* Touch Ripple Effect */
+  .menu-card,
+  .option-btn,
+  .action-btn,
+  .chapter-card,
+  .back-btn,
+  .next-btn,
+  .submit-btn,
+  .icon-btn {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(67,97,238,0.25);
+    transform: scale(0);
+    animation: rippleAnim 0.55s linear;
+    pointer-events: none;
+  }
+
+  @keyframes rippleAnim {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  /* أحجام أكبر للـ tap targets */
+  .option-btn {
+    min-height: 56px;
+    padding: 14px 16px;
+    font-size: 1rem;
+  }
+
+  .action-btn, .next-btn, .submit-btn {
+    min-height: 52px;
+  }
+
+  .icon-btn {
+    width: 46px;
+    height: 46px;
+  }
+
+  .back-btn {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* تحسين القراءة على الشاشة الصغيرة */
+  .q-text {
+    font-size: 1.1rem;
+    line-height: 1.7;
+  }
+
+  /* Pull-to-refresh indicator position */
+  .screen {
+    overscroll-behavior-y: contain;
+  }
+
+  /* تحسين شريط النتائج */
+  .score-strip {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    padding: 0 4px;
+  }
+
+  .score-item {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 0.82rem;
+  }
+
+  /* تحسين بطاقة السؤال */
+  .question-card {
+    border-radius: 20px;
+    padding: 20px 16px 24px;
+  }
+
+  /* Feedback bar أحسن على الموبايل */
+  .feedback-bar {
+    border-radius: 20px 20px 0 0;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    gap: 12px;
+  }
+
+  /* زرار المتابعة أوضح */
+  .next-btn {
+    border-radius: 14px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 800;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Bottom safe area */
+  .notes-fab {
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Hero section أنيق */
+  .hero-section {
+    border-radius: 20px;
+  }
+
+  /* Chapters grid محسّن */
+  .chapters-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px;
+  }
+
+  /* modal يظهر من أسفل على الموبايل */
+  #settings-modal .modal-box,
+  #exit-modal .modal-box,
+  #reset-confirm-modal .modal-box,
+  #daily-done-modal .modal-box,
+  #custom-alert-modal .modal-box {
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    max-width: 100%;
+    margin: auto 0 0;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* overlay يحاذي من الأسفل */
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  /* عدا الـ notes modal — يبقى في المنتصف */
+  #notes-modal.modal-overlay {
+    align-items: center !important;
+    padding: 16px !important;
+  }
+  #notes-modal .modal-box {
+    border-radius: 24px !important;
+    width: 95% !important;
+    max-width: 440px !important;
+    margin: auto !important;
+  }
+
+  /* إضافة animation للـ modal من أسفل */
+  #settings-modal .modal-box,
+  #exit-modal .modal-box,
+  #reset-confirm-modal .modal-box,
+  #daily-done-modal .modal-box,
+  #custom-alert-modal .modal-box {
+    animation: slideUpModal 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+
+  @keyframes slideUpModal {
+    from { transform: translateY(100%); opacity: 0.8; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+}
+
+/* iOS safe area */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    body { padding-bottom: env(safe-area-inset-bottom); }
+  }
+}
+/* =============================================
+   BIRMAJA — NEW FEATURES CSS
+   ============================================= */
+
+/* ===== OFFLINE BANNER ===== */
+.offline-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #f72585, #4361ee);
+  color: #fff;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  animation: slideDown 0.4s ease;
+}
+@keyframes slideDown {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(0); }
+}
+
+/* ===== TOAST NOTIFICATIONS ===== */
+.toast-container {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  box-shadow: var(--shadow-md);
+  font-size: 0.92rem;
+  font-weight: 600;
+  max-width: 320px;
+  min-width: 200px;
+  opacity: 0;
+  transform: translateX(120%);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1);
+  pointer-events: auto;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+.toast.hide {
+  opacity: 0;
+  transform: translateX(120%);
+}
+.toast-success { border-right: 4px solid var(--success); }
+.toast-error   { border-right: 4px solid var(--danger); }
+.toast-info    { border-right: 4px solid var(--secondary); }
+.toast-warning { border-right: 4px solid var(--warning); }
+.toast-xp      { border-right: 4px solid #f59e0b; background: linear-gradient(135deg, var(--surface), #fef3c720); }
+.toast-icon { font-size: 1.2rem; flex-shrink: 0; }
+
+/* ===== ONBOARDING SCREEN ===== */
+#onboarding-screen {
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+.onboarding-wrap {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+.onboarding-logo { margin-bottom: 4px; }
+.ob-slides {
+  width: 100%;
+  position: relative;
+  min-height: 280px;
+}
+.ob-slide {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  animation: fadeIn 0.4s ease;
+}
+.ob-slide.active { display: flex; }
+.ob-emoji { font-size: 4rem; }
+.ob-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--text-main);
+}
+.ob-desc {
+  font-size: 1rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  max-width: 340px;
+}
+.ob-name-input {
+  width: 100%;
+  max-width: 300px;
+  padding: 14px 18px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: var(--bg-color);
+  color: var(--text-main);
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.ob-name-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.ob-dots { display: flex; gap: 8px; }
+.ob-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--border-color);
+  transition: all 0.3s;
+}
+.ob-dot.active {
+  background: var(--primary);
+  width: 28px;
+  border-radius: 5px;
+}
+.ob-actions { width: 100%; max-width: 300px; }
+.ob-next-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(67,97,238,0.35);
+}
+.ob-next-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(67,97,238,0.45); }
+.ob-next-btn:active { transform: scale(0.97); }
+
+/* ===== AVATAR GRID (ONBOARDING) ===== */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+.av-btn {
+  font-size: 2rem;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border-color);
+  background: var(--bg-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.av-btn:hover  { border-color: var(--primary); transform: scale(1.1); }
+.av-btn.selected {
+  border-color: var(--primary);
+  background: rgba(67,97,238,0.12);
+  box-shadow: 0 0 0 3px rgba(67,97,238,0.25);
+  transform: scale(1.08);
+}
+
+/* ===== AVATAR GRID SMALL (SETTINGS) ===== */
+.avatar-grid-sm {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+.av-btn-sm {
+  font-size: 1.4rem;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border-color);
+  background: var(--bg-color);
+  cursor: pointer;
+  transition: all 0.2s;
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.av-btn-sm:hover  { border-color: var(--primary); transform: scale(1.1); }
+.av-btn-sm.selected {
+  border-color: var(--primary);
+  background: rgba(67,97,238,0.12);
+  box-shadow: 0 0 0 2px rgba(67,97,238,0.3);
+}
+
+/* ===== LOADING SCREEN ENHANCEMENTS ===== */
+.load-quote {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.6;
+  margin-bottom: 8px;
+  min-height: 40px;
+  font-family: 'Amiri', serif;
+  direction: rtl;
+}
+.load-pct {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-top: 6px;
+  font-family: 'Fira Code', monospace;
+}
+
+/* ===== CHAPTER PROGRESS BAR ===== */
+.ch-progress-wrap {
+  width: 100%;
+  height: 5px;
+  background: var(--border-color);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.ch-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 99px;
+  transition: width 0.6s ease;
+}
+.ch-progress-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+  text-align: center;
+}
+.ch-hs {
+  font-size: 0.78rem;
+  color: #f59e0b;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* ===== KEYBOARD SHORTCUTS PANEL ===== */
+.kb-hints {
+  position: fixed;
+  bottom: 80px;
+  left: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-md);
+  z-index: 9000;
+  min-width: 220px;
+  direction: rtl;
+}
+.kb-hint-title {
+  font-weight: 800;
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+.kb-hint-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+.kb-hint-row:last-of-type { margin-bottom: 0; }
+kbd {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  box-shadow: 0 2px 0 var(--border-color);
+}
+.kb-close {
+  position: absolute;
+  top: 8px; left: 10px;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+@media (max-width: 480px) {
+  .toast-container { right: 12px; left: 12px; }
+  .toast { max-width: 100%; }
+  .avatar-grid { grid-template-columns: repeat(4, 1fr); }
+  .avatar-grid-sm { grid-template-columns: repeat(6, 1fr); }
+  .kb-hints { left: 12px; right: 12px; bottom: 70px; }
+}
+
+/* =============================================
+   MOBILE-FIRST OVERHAUL — سلاسة التليفون
+   ============================================= */
+
+/* ===== BOTTOM NAVIGATION BAR ===== */
+.bottom-nav {
+  display: none; /* مخفي على الديسكتوب */
+}
+
+@media (max-width: 768px) {
+  /* إظهار الـ bottom nav على الموبايل */
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--surface);
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    z-index: 800;
+    justify-content: space-around;
+    align-items: center;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .bnav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex: 1;
+    height: 100%;
+    background: none;
+    border: none;
+    padding: 8px 4px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .bnav-icon {
+    font-size: 1.4rem;
+    line-height: 1;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: block;
+  }
+
+  .bnav-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: color 0.2s;
+    font-family: 'Cairo', sans-serif;
+  }
+
+  .bnav-btn.active .bnav-icon {
+    transform: translateY(-4px) scale(1.15);
+  }
+  .bnav-btn.active .bnav-label {
+    color: var(--primary);
+  }
+  .bnav-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    width: 32px; height: 3px;
+    background: var(--primary);
+    border-radius: 0 0 3px 3px;
+    animation: navIndicator 0.25s ease forwards;
+  }
+  @keyframes navIndicator {
+    from { width: 0; opacity: 0; }
+    to   { width: 32px; opacity: 1; }
+  }
+
+  /* زرار التحدي اليومي مميز */
+  .bnav-daily {
+    position: relative;
+  }
+  .bnav-daily .bnav-icon {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    box-shadow: 0 4px 12px rgba(67,97,238,0.4);
+    margin-top: -16px;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+  }
+  .bnav-daily:active .bnav-icon {
+    transform: scale(0.92);
+  }
+
+  /* ===== GLOBAL MOBILE PADDING (حساب الـ bottom nav) ===== */
+  .screen {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* الشاشة الرئيسية */
+  #home-screen {
+    padding-top: 16px;
+    gap: 0;
+  }
+
+  /* top bar أصغر وأنيق */
+  .top-bar {
+    margin-bottom: 16px;
+    padding: 0;
+  }
+
+  .player-info {
+    gap: 10px;
+    padding: 6px 12px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .player-name {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+  }
+
+  .xp-mini {
+    font-size: 0.75rem;
+    gap: 4px;
+  }
+
+  .xp-bar-mini { width: 40px; }
+
+  .top-controls {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
+
+  /* ===== HERO SECTION ===== */
+  .hero-section {
+    padding: 20px 16px;
+    margin-bottom: 16px;
+    border-radius: var(--radius-md);
+  }
+
+  .hero-badge { font-size: 0.8rem; padding: 4px 12px; }
+
+  .hero-title {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+
+  .hero-stats {
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 10px 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .stat-num { font-size: 1.3rem; }
+  .stat-label { font-size: 0.68rem; }
+
+  /* ===== MENU GRID على الموبايل ===== */
+  .menu-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .menu-card {
+    padding: 14px 10px;
+    gap: 8px;
+    border-radius: var(--radius-md);
+  }
+
+  .menu-icon { font-size: 1.8rem; }
+  .menu-title { font-size: 0.9rem; }
+  .menu-desc { font-size: 0.72rem; }
+  .menu-arrow { display: none; }
+
+  /* ===== GAME SCREEN MOBILE ===== */
+
+  /* الهيدر العلوي للعبة */
+  .game-top {
+    padding: 8px 12px;
+    margin-bottom: 0;
+    gap: 6px;
+    min-height: 48px;
+  }
+
+  #game-back {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    flex-shrink: 0;
+  }
+
+  .game-meta {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  #game-chapter-title {
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    max-width: 120px;
+    margin: 0 auto;
+  }
+
+  .q-counter {
+    font-size: 0.75rem;
+    display: block;
+    margin-top: 1px;
+  }
+
+  .timer-box {
+    font-size: 0.9rem;
+    padding: 4px 8px;
+    flex-shrink: 0;
+  }
+
+  /* score strip أنيق */
+  .score-strip {
+    padding: 6px 8px;
+    gap: 0;
+  }
+
+  .score-item {
+    font-size: 0.78rem;
+    padding: 6px 4px;
+    gap: 3px;
+  }
+
+  /* بطاقة السؤال */
+  .question-card {
+    padding: 16px 14px;
+    border-radius: var(--radius-md);
+    margin-bottom: 0;
+    /* padding سفلي كافي لما يظهر الـ feedback bar */
+    padding-bottom: calc(20px + 120px);
+  }
+
+  .q-text {
+    font-size: 1.05rem;
+    line-height: 1.75;
+  }
+
+  /* الخيارات */
+  .option-btn {
+    min-height: 52px;
+    font-size: 0.95rem;
+    padding: 12px 14px;
+    text-align: right;
+    line-height: 1.4;
+  }
+
+  .opt-letter {
+    min-width: 28px;
+    min-height: 28px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  /* feedback bar على الموبايل */
+  .feedback-bar {
+    padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    gap: 10px;
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .feedback-icon { font-size: 2rem; flex-shrink: 0; }
+
+  .feedback-text { flex: 1; min-width: 0; margin: 0 8px; }
+
+  .fb-title { font-size: 1rem; }
+  .fb-detail {
+    font-size: 0.82rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .next-btn {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+    min-width: 75px;
+  }
+
+  /* ===== RESULTS SCREEN ===== */
+  .results-content {
+    padding: 24px 16px;
+    border-radius: var(--radius-md);
+    margin: 0;
+  }
+
+  .results-trophy { font-size: 4rem; }
+  .results-title { font-size: 1.6rem; margin-bottom: 16px; }
+  .stars-display { font-size: 2rem; letter-spacing: 4px; margin-bottom: 20px; }
+
+  .results-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .res-num { font-size: 1.5rem; }
+  .res-label { font-size: 0.8rem; }
+
+  .results-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .action-btn {
+    padding: 12px 16px;
+    font-size: 0.95rem;
+  }
+
+  /* ===== CHAPTERS SCREEN ===== */
+  .chapters-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  .chapter-card {
+    padding: 14px 10px;
+  }
+
+  .ch-icon { font-size: 1.8rem; }
+  .ch-title { font-size: 0.88rem; }
+  .ch-count { font-size: 0.72rem; }
+
+  /* ===== SCREEN HEADER ===== */
+  .screen-header {
+    padding: 8px 0 16px;
+    margin-bottom: 12px;
+  }
+
+  .screen-header h2 { font-size: 1.1rem; }
+
+  /* ===== SETTINGS MODAL على الموبايل ===== */
+  #settings-modal .modal-box {
+    padding: 20px 16px;
+  }
+
+  /* ===== NOTES FAB position (فوق الـ bottom nav) ===== */
+  .notes-fab {
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+  }
+
+  /* ===== ACHIEVEMENT POPUP ===== */
+  .achievement-popup {
+    top: auto;
+    bottom: calc(80px + env(safe-area-inset-bottom, 8px));
+    left: 16px;
+    right: 16px;
+    transform: none;
+    border-radius: var(--radius-md);
+    animation: achSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes achSlideUp {
+    from { transform: translateY(100px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ===== ONBOARDING ===== */
+  #onboarding-screen { padding: 20px 16px; }
+  .ob-title { font-size: 1.35rem; }
+  .ob-emoji { font-size: 3.5rem; }
+  .avatar-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .av-btn { font-size: 1.8rem; padding: 8px; }
+}
+
+/* ===== DARK MODE MOBILE TWEAKS ===== */
+body.dark-mode .bottom-nav {
+  background: rgba(30, 41, 59, 0.95);
+  border-top-color: #334155;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+}
+
+/* ===== SCROLL SMOOTHNESS ===== */
+* { -webkit-overflow-scrolling: touch; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* منع الـ text selection على الأزرار (موبايل) */
+.menu-card, .option-btn, .bnav-btn, .back-btn, .next-btn, .action-btn {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ===== SCORE STRIP ANIMATION ===== */
+.score-item span {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-block;
+}
+.score-item span.bump {
+  transform: scale(1.4);
+}
+
+/* ===== QUESTION CARD ENTRANCE ===== */
+.question-card {
+  animation: cardEntrance 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== OPTION BUTTON PRESS FEEDBACK ===== */
+.option-btn:active:not([disabled]) {
+  transform: scale(0.97);
+  transition: transform 0.08s ease;
 }
